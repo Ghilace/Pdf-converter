@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart PDF Converter | تحويل الصور باحترافية</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-body: #f4f7f6;
+            --bg-card: #ffffff;
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+            --accent: #0984e3;
+            --success: #00b894;
+            --border: #dfe6e9;
+            --ad-bg: #eeeeee;
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #f5f6fa;
+            --text-sub: #b2bec3;
+            --accent: #74b9ff;
+            --success: #55efc4;
+            --border: #2d3436;
+            --ad-bg: #2d3436;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            transition: 0.3s;
+        }
+
+        /* تنسيق مساحة الإعلانات */
+        .ad-placeholder {
+            width: 100%;
+            max-width: 728px;
+            height: 90px;
+            background: var(--ad-bg);
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            border: 1px dashed var(--text-sub);
+            color: var(--text-sub);
+            font-size: 12px;
+        }
+
+        .app-card {
+            background: var(--bg-card);
+            width: 90%;
+            max-width: 480px;
+            padding: 30px;
+            border-radius: 28px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            position: relative;
+            text-align: center;
+        }
+
+        .theme-switch {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            background: var(--border);
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            transition: 0.3s;
+        }
+
+        header h1 { color: var(--accent); margin-bottom: 5px; font-size: 26px; }
+        header p { color: var(--text-sub); font-size: 14px; margin-bottom: 30px; }
+
+        .upload-area {
+            border: 2px dashed var(--accent);
+            padding: 40px 20px;
+            border-radius: 20px;
+            background: rgba(9, 132, 227, 0.03);
+            cursor: pointer;
+            margin-bottom: 25px;
+            transition: 0.3s;
+        }
+        .upload-area:hover { background: rgba(9, 132, 227, 0.08); }
+
+        .form-group { text-align: right; margin-bottom: 15px; }
+        label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 8px; color: var(--text-sub); }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-main);
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .progress-box {
+            width: 100%;
+            height: 8px;
+            background: var(--border);
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+            overflow: hidden;
+        }
+        .progress-fill { height: 100%; background: var(--success); width: 0%; transition: 0.3s; }
+
+        .btn-action {
+            background: var(--accent);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 16px;
+            border-radius: 15px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 8px 15px rgba(9, 132, 227, 0.2);
+            transition: 0.3s;
+        }
+        .btn-action:disabled { background: var(--border); box-shadow: none; cursor: not-allowed; }
+        .btn-action:hover:not(:disabled) { transform: translateY(-2px); opacity: 0.9; }
+
+        footer { margin-top: 20px; font-size: 11px; color: var(--text-sub); }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="ad-placeholder">مساحة إعلانية علوية (Banner Ad)</div>
+
+    <div class="app-card">
+        <button class="theme-switch" onclick="toggleTheme()" id="tBtn">🌙</button>
+        
+        <header>
+            <h1>Smart PDF Pro</h1>
+            <p>حول صورك إلى مستند PDF احترافي</p>
+        </header>
+
+        <div class="upload-area" onclick="document.getElementById('fileIn').click()">
+            <div id="statusTxt">📂 اضغط لرفع الصور</div>
+            <input type="file" id="fileIn" accept="image/*" multiple hidden onchange="updateFiles()">
+        </div>
+
+        <div class="form-group">
+            <label>📝 اسم المستند:</label>
+            <input type="text" id="fileName" placeholder="مثال: تقرير_العمل">
+        </div>
+
+        <div class="form-group">
+            <label>📐 مقاس الورق:</label>
+            <select id="pSize">
+                <option value="a4">A4 (قياسي)</option>
+                <option value="a3">A3 (كبير)</option>
+                <option value="a5">A5 (صغير)</option>
+                <option value="letter">Letter</option>
+                <option value="credit-card">ID Card</option>
+            </select>
+        </div>
+
+        <div class="progress-box" id="pBox">
+            <div class="progress-fill" id="pBar"></div>
+        </div>
+
+        <button class="btn-action" id="goBtn" onclick="processPDF()" disabled>بدء التحويل وحفظ الملف ✨</button>
+
+        <footer>المعالجة تتم محلياً 100% لضمان خصوصيتك</footer>
+    </div>
+
+    <div class="ad-placeholder" style="height: 250px;">مساحة إعلانية سفلية (Large Rectangle)</div>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+        let filesList = [];
+
+        function toggleTheme() {
+            const b = document.body;
+            const isDark = b.getAttribute('data-theme') === 'dark';
+            b.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            document.getElementById('tBtn').innerText = isDark ? '🌙' : '☀️';
+        }
+
+        function updateFiles() {
+            filesList = Array.from(document.getElementById('fileIn').files);
+            if(filesList.length > 0) {
+                document.getElementById('goBtn').disabled = false;
+                document.getElementById('statusTxt').innerText = `✅ تم اختيار ${filesList.length} صور`;
+            }
+        }
+
+        async function processPDF() {
+            const btn = document.getElementById('goBtn');
+            const pBar = document.getElementById('pBar');
+            const pBox = document.getElementById('pBox');
+            const format = document.getElementById('pSize').value;
+            const name = document.getElementById('fileName').value || 'SmartPDF';
+
+            btn.disabled = true;
+            btn.innerText = "جاري التحويل...";
+            pBox.style.display = "block";
+
+            const doc = new jsPDF('p', 'mm', format);
+            const pW = doc.internal.pageSize.getWidth();
+            const pH = doc.internal.pageSize.getHeight();
+
+            for (let i = 0; i < filesList.length; i++) {
+                pBar.style.width = ((i+1)/filesList.length * 100) + '%';
+                
+                const data = await new Promise(r => {
+                    const reader = new FileReader();
+                    reader.onload = e => r(e.target.result);
+                    reader.readAsDataURL(filesList[i]);
+                });
+
+                const img = await new Promise(r => {
+                    const image = new Image();
+                    image.onload = () => r(image);
+                    image.src = data;
+                });
+
+                const ratio = img.width / img.height;
+                let w = pW - 10;
+                let h = w / ratio;
+
+                if (h > pH - 10) {
+                    h = pH - 10;
+                    w = h * ratio;
+                }
+
+                if (i > 0) doc.addPage(format, 'p');
+                const x = (pW - w) / 2;
+                const y = (pH - h) / 2;
+                doc.addImage(data, 'JPEG', x, y, w, h);
+            }
+
+            doc.save(`${name}.pdf`);
+            btn.disabled = false;
+            btn.innerText = "بدء التحويل وحفظ الملف ✨";
+            pBox.style.display = "none";
+        }
+    </script>
+</body>
+</html>
